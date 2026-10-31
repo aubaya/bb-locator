@@ -158,6 +158,21 @@
             return;
         }
 
+        // First get the approximate location of the device
+        // Hopefully this will improve speed on Android
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                deviceLat = position.coords.latitude;
+                deviceLon = position.coords.longitude;
+                updateLocation(position.coords.latitude, position.coords.longitude);
+            },
+            (error) => {
+                text.textContent = "Failed to get location";
+                subText.textContent = error.message;
+            }
+        );
+
+        // Then watch for changes in the device location (precise updates)
         navigator.geolocation.watchPosition(
             (position) => {
                 deviceLat = position.coords.latitude; // Needed for arrow calculation
