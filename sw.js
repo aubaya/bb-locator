@@ -39,10 +39,12 @@ self.addEventListener('fetch', (event) => {
             .then((response) => {
                 if (response.ok && new URL(event.request.url).origin === location.origin) {
                     const copy = response.clone();
-                    caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+                    caches.open(CACHE).then((cache) => cache.put(event.request, copy)).catch(() => {});
                 }
                 return response;
             })
-            .catch(() => caches.match(event.request).then((hit) => hit || caches.match('index.html')))
+            .catch(() => caches.match(event.request).then((hit) =>
+                hit || (event.request.mode === 'navigate' ? caches.match('index.html') : Response.error())
+            ))
     );
 });

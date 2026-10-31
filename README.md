@@ -4,8 +4,10 @@ A small installable web app (PWA) that points you toward Backyard Builder. It re
 
 ## Features
 
-- Uses the Geolocation and Device Orientation APIs to compute the bearing to the target.
-- Installable on Android/Chrome via a web app manifest and service worker.
+- Uses the Geolocation and Device Orientation APIs to compute the distance and bearing to the target.
+- Works on Android (Chrome) and iOS (Safari). iOS asks for motion and orientation permission when you tap the start button.
+- Installable as a PWA via a web app manifest and service worker; works offline after the first visit.
+- Portrait only; pinch zoom is intentionally disabled.
 - No build step or dependencies; plain HTML, CSS and JavaScript.
 
 ## Project structure
@@ -28,11 +30,24 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000`.
 
-Geolocation, device orientation and service workers require a secure context. `localhost` qualifies; to test on a phone, serve the app over HTTPS (for example through a tunnel).
+Geolocation, device orientation and service workers require a secure context. `localhost` qualifies; to test on a phone, serve the app over HTTPS (for example through a tunnel). A plain `http://<LAN-IP>:8000` address will not work on a phone.
+
+## Deployment
+
+The repository is plain static files and is hosted on GitHub Pages, which serves it over HTTPS.
 
 ## Configuration
 
-Destinations are defined in the `locations` array in `index.html` (`lat`, `lon`, image and background colour).
+Destinations are defined in the `locations` array in `index.html`:
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Identifier of the destination |
+| `lat`, `lon` | Coordinates in decimal degrees (WGS84) |
+| `img` | Image shown at the top of the page |
+| `bgColor` | Page background colour for this destination |
+
+Keep the manifest `background_color` in sync with the default destination's `bgColor`.
 
 ## Updating the service worker
 
