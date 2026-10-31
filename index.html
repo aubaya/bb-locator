@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Where is Backyard Builder?</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#f9d002">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body>
+    <div class="top-half">
+        <img class="main-img" src="assets/billy-asking.png" alt="Backyard Builder">
+    </div>
+    
+    <div class="bottom-half arrow-container hidden">
+        <img class="arrow" src="assets/arrow1.png" alt="Arrow">
+    </div>
+
+    <div class="bottom-half text-container hidden">
+        <div style="text-align: center;">
+            <span id="main-text">Finding location</span><br />
+            <span id="sub-text">Please wait....</span>
+        </div>
+    </div>
+
+    <div class="bottom-half button-container">
+        <button class="start-button" onclick="startLocalization()">Find Backyard Builder</button>
+    </div>
+</body>
+<script>
+    // TODO: Add logic to parse id from url
+    const currentLocationIdx = 0;
+    const locations = [
+        {
+            id: "backyard-builder",
+            lat: 37.551447,
+            lon: 127.047016,
+            img: "assets/billy-asking.png",
+            bgColor: "#f9d002"
+        }
+    ];
+
+    // Location related stuff
+    let deviceLat = null;
+    let deviceLon = null;
+    let bearing = null;
+
+    // UI related stuff
+    const arrow = document.querySelector('.arrow');
+    const text = document.querySelector('#main-text');
+    const subText = document.querySelector('#sub-text');
+
+    function showArrow() {
+        document.querySelector('.arrow-container').classList.remove('hidden');
+    }
+    function showText() {
+        document.querySelector('.text-container').classList.remove('hidden');
+    }
+    function hideButton() {
+        document.querySelector('.button-container').classList.add('hidden');
+    }
+
+    function setImageAndBackground() {
+        const mainImg = document.querySelector('.main-img');
+        mainImg.src = locations[currentLocationIdx].img;
+        document.body.style.backgroundColor = locations[currentLocationIdx].bgColor;
+    }
+
+    function setRotation(angle) {
+        if (deviceLat === null || deviceLon === null) {
+            return;
+        }
+        // Step 1: Convert coordinates from degrees to radians for mathematical calculations
+        const lat1Rad = deviceLat * Math.PI / 180;
+        const lat2Rad = locations[currentLocationIdx].lat * Math.PI / 180;
+        const deltaLonRad = (locations[currentLocationIdx].lon - deviceLon) * Math.PI / 180;
+        
+        // Step 2: Calculate the bearing using the forward azimuth formula
+        // This gives us the angle from north to the target point
+        const y = Math.sin(deltaLonRad) * Math.cos(lat2Rad);
+        const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - 
+                Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(deltaLonRad);
+        // Step 3: Convert the result to degrees and normalize to 0-360 range
+        let bearingFromNorth = Math.atan2(y, x) * 180 / Math.PI;
+        bearingFromNorth = (bearingFromNorth + 360) % 360;
+
+        // Step 4: Calculate the relative bearing by subtracting device orientation
+        // This tells us which direction to turn from where the device is currently pointing
+        let relativeBearing = bearingFromNorth - angle;
+
+        // Step 5: Normalize the relative bearing to -180 to +180 range
+        // Positive means turn right, negative means turn left
+        if (relativeBearing > 180) relativeBearing -= 360;
+        if (relativeBearing < -180) relativeBearing += 360;
+
+        // Step 6: Apply the rotation to the arrow element
+        const arrow = document.querySelector('.arrow');
+        showArrow();
+        arrow.style.transform = `rotate(${relativeBearing}deg)`;
+        
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; // metres
+        const phi1 = lat1 * Math.PI/180;
+        const phi2 = lat2 * Math.PI/180;
+        const deltaPhi = (lat2-lat1) * Math.PI/180;
+        const deltaLambda = (lon2-lon1) * Math.PI/180;
+
+        const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
+                  Math.cos(phi1) * Math.cos(phi2) *
+                  Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        return R * c;
+    }
+
+    function updateLocation(lat, lon) {
+        // Update distance
+        const location = locations[currentLocationIdx];
+        const distance = calculateDistance(lat, lon, location.lat, location.lon);
+        if (distance >= 100) {
+            text.textContent = `${(distance/1000).toFixed(0)}`;
+            subText.textContent = "km";
+        } else if (distance >= 1) {
+            text.textContent = `${(distance/1000).toFixed(2)}`;
+            subText.textContent = "km";
+        } else {
+            text.textContent = `${distance.toFixed(0)}`;
+            subText.textContent = "m";
+        }
+
+        // Update rotation
+        const deltaLon = location.lon - lon;
+        const y = Math.sin(deltaLon * Math.PI/180) * Math.cos(location.lat * Math.PI/180);
+        const x = Math.cos(lat * Math.PI/180) * Math.sin(location.lat * Math.PI/180) -
+                  Math.sin(lat * Math.PI/180) * Math.cos(location.lat * Math.PI/180) * Math.cos(deltaLon * Math.PI/180);
+        const bearing = Math.atan2(y, x) * 180/Math.PI;
+    }
+
+
+
+    // Localization initialization
+    async function startLocalization() {
+        hideButton();
+        showText();
+
+        // ============== DEVICE LOCATION =============
+        if (!navigator.geolocation) {
+            text.textContent = "Geolocation not supported";
+            subText.textContent = "Cannot access device location";
+            return;
+        }
+
+        navigator.geolocation.watchPosition(
+            (position) => {
+                deviceLat = position.coords.latitude; // Needed for arrow calculation
+                deviceLon = position.coords.longitude; // Needed for arrow calculation
+                updateLocation(position.coords.latitude, position.coords.longitude);
+            },
+            (error) => {
+                text.textContent = "Failed to get location";
+                subText.textContent = error.message;
+            },
+            { enableHighAccuracy: true }
+        );
+
+        // ============== END DEVICE LOCATION =============
+
+
+        // ============== DEVICE ORIENTATION =============
+        // Some devices require explicit permission to access device orientation
+        if (typeof DeviceMotionEvent.requestPermission === "function") {
+            const permissionStatus = await DeviceMotionEvent.requestPermission(); // Note: some devices always return granted
+            if (permissionStatus === "granted") {
+                window.addEventListener('deviceorientation', orientationEventHandler);
+            } else {
+                text.textContent = "Permission denied";
+                subText.textContent = "Cannot access device orientation";
+            }
+            return;
+        }
+        
+        // For devices that do not require explicit permission, directly add the event listener
+        window.addEventListener('deviceorientation', orientationEventHandler);
+        // ============== END DEVICE ORIENTATION =============
+    }
+
+    function orientationEventHandler(event) {
+        if (event.webkitCompassHeading !== undefined) {
+            setRotation(event.webkitCompassHeading);
+            return;
+        }
+        
+        if (!event.absolute) {
+            // Fallback for devices that do not provide absolute orientation
+            window.removeEventListener('deviceorientation', orientationEventHandler);
+            window.addEventListener('deviceorientationabsolute', orientationEventHandler);
+            return;
+        }
+
+        setRotation(event.alpha);
+    }
+
+    setImageAndBackground();
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+</script>
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        font-family: sans-serif;
+    }
+
+    .top-half {
+        position: absolute;
+        top: 0;
+        height: 50vh;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        /* height: 100vh; */
+        overflow: hidden;
+    }
+
+    .bottom-half {
+        position: absolute;
+        bottom: 0;
+        height: 50vh;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    .main-img {
+        max-width: 80%;
+        max-height: 80%;
+    }
+
+    .arrow-container {
+        z-index: 9;
+    }
+
+    .arrow {
+        max-width: 80%;
+        max-height: 80%;
+        z-index: 9;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .start-button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 5px;
+    }
+
+    #main-text {
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    #sub-text {
+        font-size: 18px;
+    }
+</style>
+</html>
