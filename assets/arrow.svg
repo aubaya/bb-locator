@@ -43,7 +43,10 @@
      id="layer1">
     <path
        id="path2"
-       style="fill:none;fill-opacity:1;stroke:#8c8c8c;stroke-width:4.59349;stroke-dasharray:none;stroke-opacity:1"
-       d="M 132.29167 9.6965658 L 118.81445 34.233053 A 99.022606 99.022606 0 0 0 33.269287 132.29167 A 99.022606 99.022606 0 0 0 132.29167 231.31405 A 99.022606 99.022606 0 0 0 231.31405 132.29167 A 99.022606 99.022606 0 0 0 145.75596 34.209798 L 132.29167 9.6965658 z " />
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:4.59349;stroke-dasharray:none;stroke-opacity:1"
+       d="M 132.29167 9.6965658 L 118.81445 34.233053 A 99.022606 99.022606 0 0 0 33.269287 132.29167 A 99.022606 99.022606 0 0 0 132.29167 231.31405 A 99.022606 99.022606 0 0 0 231.31405 132.29167 A 99.022606 99.022606 0 0 0 145.75596 34.209798 L 132.29167 9.6965658 z "
+       inkscape:export-filename="arrow1.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
   </g>
 </svg>

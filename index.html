@@ -11,22 +11,22 @@
     <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 </head>
 <body>
-    <div class="top-half">
+    <div class="billy-image-container">
         <img class="main-img" src="assets/billy-asking.png" alt="Backyard Builder">
     </div>
     
-    <div class="bottom-half arrow-container hidden">
+    <div class="compass-container arrow-container hidden">
         <img class="arrow" src="assets/arrow1.png" alt="Arrow">
     </div>
 
-    <div class="bottom-half text-container hidden">
+    <div class="compass-container text-container hidden">
         <div style="text-align: center;">
             <span id="main-text">Finding location</span><br />
             <span id="sub-text">Please wait....</span>
         </div>
     </div>
 
-    <div class="bottom-half button-container">
+    <div class="compass-container start-button-container">
         <button class="start-button" onclick="startLocalization()">Find Backyard Builder</button>
     </div>
 </body>
@@ -63,7 +63,7 @@
         document.querySelector('.text-container').classList.remove('hidden');
     }
     function hideButton() {
-        document.querySelector('.button-container').classList.add('hidden');
+        document.querySelector('.start-button-container').classList.add('hidden');
     }
 
     function setImageAndBackground() {
@@ -222,7 +222,7 @@
         touch-action: pan-x pan-y;
     }
 
-    .top-half {
+    .billy-image-container {
         position: absolute;
         top: 0;
         height: 50vh;
@@ -234,10 +234,10 @@
         overflow: hidden;
     }
 
-    .bottom-half {
+    .compass-container {
         position: absolute;
-        bottom: 0;
-        height: 50vh;
+        bottom: 20vh;
+        height: 30vh;
         width: 100%;
         display: flex;
         justify-content: center;
