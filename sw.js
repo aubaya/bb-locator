@@ -1,5 +1,5 @@
 // Bump the version to invalidate the cache after changing any cached file.
-const CACHE = 'bb-locator-v1';
+const CACHE = 'bb-locator-v2';
 const SHELL = [
     './',
     'index.html',
