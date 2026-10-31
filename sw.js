@@ -1,5 +1,5 @@
 // Bump the version to invalidate the cache after changing any cached file.
-const CACHE = 'bb-locator-v4';
+const CACHE = 'bb-locator-v5';
 const SHELL = [
     './',
     'index.html',
@@ -15,7 +15,11 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
-    event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
+    event.waitUntil(
+        caches.open(CACHE).then((cache) =>
+            cache.addAll(SHELL.map((url) => new Request(url, { cache: 'reload' })))
+        )
+    );
     self.skipWaiting();
 });
 
@@ -27,11 +31,11 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Network first so edits show up immediately; cache is the offline fallback.
+// Network first (bypassing the browser HTTP cache); the SW cache is only the offline fallback.
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
     event.respondWith(
-        fetch(event.request)
+        fetch(event.request, { cache: 'no-cache' })
             .then((response) => {
                 if (response.ok && new URL(event.request.url).origin === location.origin) {
                     const copy = response.clone();
