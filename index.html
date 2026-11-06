@@ -161,7 +161,7 @@
                 text.textContent = "Failed to get location";
                 subText.textContent = error.message;
             },
-            { timeout: 10000, maximumAge: 60000 }
+            { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
         );
 
         // Then watch for changes in the device location (precise updates)
