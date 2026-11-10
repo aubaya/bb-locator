@@ -34,13 +34,18 @@
     </div>
 
 
-    <div class="buttons-container">
-
+    <div class="buttons-container hidden">
+        <button class="nav-button" onclick="changeLocation(-1)" aria-label="Previous location">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 5 8 12 15 19" /></svg>
+        </button>
+        <button class="nav-button" onclick="changeLocation(1)" aria-label="Next location">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 5 16 12 9 19" /></svg>
+        </button>
     </div>
 </body>
 <script>
     // TODO: Add logic to parse id from url
-    const currentLocationIdx = 0;
+    let currentLocationIdx = 0;
     const locations = [
         {
             id: "backyard-builder",
@@ -48,6 +53,13 @@
             lon: 127.047016,
             img: "assets/billy-asking.png",
             bgColor: "#fcc22f"
+        },
+        {
+            id: "avec-bike",
+            lat: 37.522894,
+            lon: 127.020594,
+            img: "assets/bb-asking-avec.png",
+            bgColor: "#f0f0f0"
         }
     ];
 
@@ -86,6 +98,9 @@
     function showArrow() {
         document.querySelector('.arrow-container').classList.remove('hidden');
     }
+    function showNavButtons() {
+        document.querySelector('.buttons-container').classList.remove('hidden');
+    }
     function showText() {
         document.querySelector('.text-container').classList.remove('hidden');
     }
@@ -100,6 +115,14 @@
         const mainImg = document.querySelector('.main-img');
         mainImg.src = locations[currentLocationIdx].img;
         document.body.style.backgroundColor = locations[currentLocationIdx].bgColor;
+    }
+
+    function changeLocation(step) {
+        currentLocationIdx = (currentLocationIdx + step + locations.length) % locations.length;
+        setImageAndBackground();
+        if (deviceLat !== null) {
+            updateLocation(deviceLat, deviceLon);
+        }
     }
 
     function setRotation(angle) {
@@ -156,6 +179,7 @@
         setLoading(false);
         setStatus('location', null);
         showArrow();
+        showNavButtons();
         // Update distance
         const location = locations[currentLocationIdx];
         const distance = calculateDistance(lat, lon, location.lat, location.lon);
@@ -304,6 +328,31 @@
         display: flex;
         justify-content: center;
         align-items: center;
+    }
+
+    .nav-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 48px;
+        height: 48px;
+        margin: 0 24px;
+        padding: 0;
+        cursor: pointer;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 50%;
+    }
+
+    .nav-button svg {
+        width: 24px;
+        height: 24px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
     }
 
     .main-img {
