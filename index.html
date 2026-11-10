@@ -179,7 +179,7 @@
         setLoading(false);
         setStatus('location', null);
         showArrow();
-        showNavButtons();
+        // showNavButtons(); // Disabled for now
         // Update distance
         const location = locations[currentLocationIdx];
         const distance = calculateDistance(lat, lon, location.lat, location.lon);
