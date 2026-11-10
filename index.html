@@ -16,18 +16,26 @@
     </div>
     
     <div class="compass-container arrow-container hidden">
-        <img class="arrow" src="assets/arrow1.png" alt="Arrow">
+        <img class="arrow arrow-idle" src="assets/arrow0.png" alt="Arrow">
+        <img class="arrow arrow-live hidden" src="assets/arrow1.png" alt="Arrow">
     </div>
 
     <div class="compass-container text-container hidden">
         <div style="text-align: center;">
+            <div class="spinner hidden"></div>
             <span id="main-text">Finding location</span><br />
             <span id="sub-text">Please wait....</span>
+            <div id="status-text"></div>
         </div>
     </div>
 
     <div class="compass-container start-button-container">
         <button class="start-button" onclick="startLocalization()">Find Backyard Builder</button>
+    </div>
+
+
+    <div class="buttons-container">
+
     </div>
 </body>
 <script>
@@ -51,9 +59,29 @@
     let deviceLon = null;
 
     // UI related stuff
-    const arrow = document.querySelector('.arrow');
+    const arrowIdle = document.querySelector('.arrow-idle');
+    const arrow = document.querySelector('.arrow-live');
     const text = document.querySelector('#main-text');
     const subText = document.querySelector('#sub-text');
+    const statusText = document.querySelector('#status-text');
+    const statusMessages = {};
+
+    // Secondary problems (e.g. orientation) go here so they don't overwrite the distance.
+    function setStatus(key, message) {
+        statusMessages[key] = message;
+        statusText.textContent = Object.values(statusMessages).filter(Boolean).join('\n');
+    }
+
+    // Before the first fix a location error replaces the distance; afterwards it is only a status.
+    function handleLocationError(error) {
+        if (deviceLat !== null) {
+            setStatus('location', `Location unavailable: ${error.message}`);
+            return;
+        }
+        setLoading(false);
+        text.textContent = "Failed to get location";
+        subText.textContent = error.message;
+    }
 
     function showArrow() {
         document.querySelector('.arrow-container').classList.remove('hidden');
@@ -63,6 +91,9 @@
     }
     function hideButton() {
         document.querySelector('.start-button-container').classList.add('hidden');
+    }
+    function setLoading(loading) {
+        document.querySelector('.spinner').classList.toggle('hidden', !loading);
     }
 
     function setImageAndBackground() {
@@ -99,7 +130,9 @@
         if (relativeBearing < -180) relativeBearing += 360;
 
         // Step 6: Apply the rotation to the arrow element
-        showArrow();
+        // Swapping img.src doesn't repaint on iOS until a touch, so toggle two preloaded images instead.
+        arrowIdle.classList.add('hidden');
+        arrow.classList.remove('hidden');
         arrow.style.transform = `rotate(${relativeBearing}deg)`;
         
     }
@@ -120,6 +153,9 @@
     }
 
     function updateLocation(lat, lon) {
+        setLoading(false);
+        setStatus('location', null);
+        showArrow();
         // Update distance
         const location = locations[currentLocationIdx];
         const distance = calculateDistance(lat, lon, location.lat, location.lon);
@@ -135,13 +171,34 @@
         }
     }
 
+    function registerGeolocationUpdates() {
+        // Watch for changes in the device location (precise updates)
+        navigator.geolocation.watchPosition(
+            (position) => {
+                deviceLat = position.coords.latitude; // Needed for arrow calculation
+                deviceLon = position.coords.longitude; // Needed for arrow calculation
+                updateLocation(position.coords.latitude, position.coords.longitude);
+            },
+            (error) => {
+                handleLocationError(error);
+            },
+            { enableHighAccuracy: true }
+        );
+    }
+
+    function registerOrientationUpdates() {
+        
+    }
+
     // Localization initialization
     async function startLocalization() {
         hideButton();
         showText();
+        setLoading(true);
 
         // ============== DEVICE LOCATION =============
         if (!navigator.geolocation) {
+            setLoading(false);
             text.textContent = "Geolocation not supported";
             subText.textContent = "Cannot access device location";
             return;
@@ -154,28 +211,13 @@
                 deviceLat = position.coords.latitude;
                 deviceLon = position.coords.longitude;
                 updateLocation(position.coords.latitude, position.coords.longitude);
+                registerGeolocationUpdates(); // Then start watching for precise location updates
             },
             (error) => {
                 // The watch below may already have delivered a position.
-                if (deviceLat !== null) return;
-                text.textContent = "Failed to get location";
-                subText.textContent = error.message;
+                handleLocationError(error);
             },
-            { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-        );
-
-        // Then watch for changes in the device location (precise updates)
-        navigator.geolocation.watchPosition(
-            (position) => {
-                deviceLat = position.coords.latitude; // Needed for arrow calculation
-                deviceLon = position.coords.longitude; // Needed for arrow calculation
-                updateLocation(position.coords.latitude, position.coords.longitude);
-            },
-            (error) => {
-                text.textContent = "Failed to get location";
-                subText.textContent = error.message;
-            },
-            { enableHighAccuracy: true }
+            { enableHighAccuracy: false, timeout: 30000 }
         );
 
         // ============== END DEVICE LOCATION =============
@@ -188,8 +230,7 @@
             if (permissionStatus === "granted") {
                 window.addEventListener('deviceorientation', orientationEventHandler);
             } else {
-                text.textContent = "Permission denied";
-                subText.textContent = "Cannot access device orientation";
+                setStatus('orientation', "Orientation permission denied");
             }
             return;
         }
@@ -211,6 +252,9 @@
             window.addEventListener('deviceorientationabsolute', orientationEventHandler);
             return;
         }
+
+        // Desktops expose the event but report no heading.
+        if (event.alpha === null) return;
 
         setRotation(360 - event.alpha);
     }
@@ -252,6 +296,16 @@
         overflow: hidden;
     }
 
+    .buttons-container {
+        position: absolute;
+        bottom: 0vh;
+        height: 20vh;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
     .main-img {
         max-width: 80%;
         max-height: 80%;
@@ -269,6 +323,21 @@
         max-width: 80%;
         max-height: 80%;
         z-index: 9;
+    }
+
+    .spinner {
+        width: 24px;
+        height: 24px;
+        margin: 0 auto 10px;
+        box-sizing: border-box;
+        border: 3px solid rgba(0, 0, 0, 0.2);
+        border-top-color: rgba(0, 0, 0, 0.8);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 
     .hidden {
@@ -292,6 +361,12 @@
 
     #sub-text {
         font-size: 18px;
+    }
+
+    #status-text {
+        margin-top: 8px;
+        font-size: 14px;
+        white-space: pre-line;
     }
 </style>
 </html>

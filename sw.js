@@ -1,10 +1,11 @@
 // Bump the version to invalidate the cache after changing any cached file.
-const CACHE = 'bb-locator-v6';
+const CACHE = 'bb-locator-v7';
 const SHELL = [
     './',
     'index.html',
     'manifest.webmanifest',
     'assets/billy-asking.png',
+    'assets/arrow0.png',
     'assets/arrow1.png',
     'assets/icons/favicon.svg',
     'assets/icons/favicon-32.png',
